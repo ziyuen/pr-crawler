@@ -1,11 +1,10 @@
 from contextlib import nullcontext
+from readline import replace_history_item
 from keyring import delete_password
 import scrapy
 import traceback
 from github import Github
 import time
-import datetime
-import re
 from githubAlPR.items import GithubalprItem
 
 class githubPRSpider(scrapy.Spider):
@@ -16,19 +15,21 @@ class githubPRSpider(scrapy.Spider):
         self.PROJECT_NAME = 'facebook/fresco'
         BASE_URL = 'https://github.com/' + self.PROJECT_NAME + '/pull/'
 
-        # crate github client instance/add your github access token
-        g = Github("")
+        # crate github client instance
+        # you should use your own github access token
+        g = Github("access_token")
         self.repo = g.get_repo(self.PROJECT_NAME)
         self.pulls = self.repo.get_pulls(state='closed',sort='closed', direction='desc', base='main')
         self.start_urls = []
-        for pr in self.pulls:
-            self.start_urls.append(BASE_URL + str(pr.number))
-        self.idx = -1
+        # Map url to index of pr
+        self.url_to_idx = {}
+        for idx, pr in enumerate(self.pulls):
+            url = BASE_URL + str(pr.number)
+            self.start_urls.append(url)
+            self.url_to_idx[url] = idx
     
     def parse(self, response):
         try:
-            # update index
-            self.idx += 1
             # extract linked issues
             linked_issues = self.extract_linked_issues(response)
             if not linked_issues:
@@ -36,7 +37,8 @@ class githubPRSpider(scrapy.Spider):
             # extract author association
             author_association = self.extract_author_association(response)
             # get PR info from Github API
-            pr = self.pulls[self.idx]
+            idx = self.url_to_idx[response.url]
+            pr = self.pulls[idx]
             item = GithubalprItem(_id = self.PROJECT_NAME+'/'+str(pr.number),
                                   project_name = self.PROJECT_NAME,
                                   linked_issues = linked_issues,
