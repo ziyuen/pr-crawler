@@ -11,13 +11,13 @@ class githubPRSpider(scrapy.Spider):
     name = 'githubPR'
     def __init__(self, name=None, **kwargs):
         super().__init__(name, **kwargs)
-        # you need to specify the project name to crawl
-        self.PROJECT_NAME = 'facebook/fresco'
         BASE_URL = 'https://github.com/' + self.PROJECT_NAME + '/pull/'
 
         # crate github client instance
         # you should use your own github access token
-        g = Github("access_token")
+        g = Github('access_token')
+        # you need to specify the project name to crawl
+        self.PROJECT_NAME = 'project_name'
         self.repo = g.get_repo(self.PROJECT_NAME)
         self.pulls = self.repo.get_pulls(state='closed',sort='closed', direction='desc', base='main')
         self.start_urls = []
@@ -39,23 +39,24 @@ class githubPRSpider(scrapy.Spider):
             # get PR info from Github API
             idx = self.url_to_idx[response.url]
             pr = self.pulls[idx]
-            item = GithubalprItem(_id = self.PROJECT_NAME+'/'+str(pr.number),
-                                  project_name = self.PROJECT_NAME,
-                                  linked_issues = linked_issues,
-                                  author_association = author_association,
-                                  status = 'merged' if pr.merged else 'closed',
-                                  changed_files = pr.changed_files,
-                                  additions = pr.additions,
-                                  deletions = pr.deletions,
-                                  commits = pr.commits,
-                                  comments = pr.comments,  # number of comments
-                                  review_comments = pr.review_comments,
-                                  time_span = time.mktime(pr.closed_at.timetuple()) - time.mktime(pr.created_at.timetuple())
-                                  )
+            item = GithubalprItem(
+                _id = self.PROJECT_NAME+'/'+str(pr.number),
+                project_name = self.PROJECT_NAME,
+                linked_issues = linked_issues,
+                author_association = author_association,
+                status = 'merged' if pr.merged else 'closed',
+                changed_files = pr.changed_files,
+                additions = pr.additions,
+                deletions = pr.deletions,
+                commits = pr.commits,
+                comments = pr.comments,  # number of comments
+                review_comments = pr.review_comments,
+                time_span = time.mktime(pr.closed_at.timetuple()) - time.mktime(pr.created_at.timetuple())
+            )
             yield item
         except Exception as e:
-             self.logger.error(str(e))
-             self.logger.error(traceback.format_exc())
+                self.logger.error(str(e))
+                self.logger.error(traceback.format_exc())
 
     @staticmethod
     def extract_linked_issues(response):

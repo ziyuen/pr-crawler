@@ -8,16 +8,7 @@ DBQuery.shellBatchSize = 1000
 use('ALTER_PRS');
 
 // show # of prs for each project
-// db.LINKED_PRS.aggregate([{$group : {_id : "$project_name", pr_num : {$sum : 1}}}])
+db.LINKED_PRS.aggregate([{$group : {_id : "$project_name", pr_num : {$sum : 1}}}])
 
 // get pulls of a specified project
-db.ANALYSE_PRS.find({"project_name": "firebase/quickstart-android"});
-
-// db.LINKED_PRS.insertOne({
-//     merged: "mybatis/mybatis-3/pull/2438",
-//     closed: ["mybatis/mybatis-3/pull/2435"
-//         ]
-// }
-// );
-
-// db.LINKED_PRS.find("merged":);
+db.LINKED_PRS.find({"project_name": "firebase/quickstart-android"});

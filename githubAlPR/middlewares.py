@@ -120,12 +120,14 @@ class TooManyRequestsRetryMiddleware(RetryMiddleware):
         if request.meta.get('dont_retry', False):
             return response
         elif response.status == 429:
+            # If the rate limit is renewed in a minute, put 60 seconds, and so on.
+            RETRY_INTERVAL = 60
             self.crawler.engine.pause()
-            time.sleep(60) # If the rate limit is renewed in a minute, put 60 seconds, and so on.
+            time.sleep(RETRY_INTERVAL) 
             self.crawler.engine.unpause()
             reason = response_status_message(response.status)
             return self._retry(request, reason, spider) or response
         elif response.status in self.retry_http_codes:
             reason = response_status_message(response.status)
             return self._retry(request, reason, spider) or response
-        return response 
+        return response
